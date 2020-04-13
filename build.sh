@@ -7,6 +7,7 @@ build_env() {
 export REGISTRY_USERNAME="${REGISTRY_USERNAME:-danfaizer}"
 export REGISTRY_PASSWORD="${REGISTRY_PASSWORD:-}"
 export REGISTRY_REPO_PATH="${REGISTRY_REPO_PATH:-https://registry.hub.docker.com/v2/repositories/}"
+export REGISTRY_API_SLEEP="${REGISTRY_API_SLEEP:-1}"
 EOF
 }
 
@@ -36,7 +37,7 @@ is_pushed() {
         fi
     done
     # "Rate-limit" registry API requests.
-    sleep 1
+    sleep $REGISTRY_API_SLEEP
     if [[ $check_id_published = true && $check_dependencies_id = true ]]; then
         echo true
     else
@@ -132,6 +133,7 @@ build_and_push() {
     dependencies_id=$(git_commit_id "go.mod")
 
     cd cmd
+    echo "Start build and push process: $(date)"
     for check in $(ls -d *); do
         check_ts=$(git_timestamp "${check}")
         check_id=$(git_commit_id "${check}")
@@ -171,8 +173,9 @@ build_and_push() {
             continue
         fi
         echo "Pushed check: $check - commit id: $check_id - dependencies commit id: $dependencies_id"
-        cd -
+        cd - > /dev/null 2>&1
     done
+    echo "Finish build and push process: $(date)"
 }
 
 eval "$(build_env)"
